@@ -45,42 +45,45 @@ async def process_inline_buttons(callback: types.CallbackQuery):
         await callback.message.answer(" /menu yozing.",reply_markup=ReplyKeyboardRemove())
     await callback.answer()
 
+
 @dp.message(F.reply_to_message)
 async def admin_reply_handler(message: types.Message):
-    reply_msg = message.reply_to_message
-    if not reply_msg.from_user.id == bot.id:
-        
-        return  
-    user_id_match = re.search(r'tg://user\?id=(\d+)', reply_msg.html_text or "")
-    if not user_id_match:
+    reply_msg = message.reply_to_message  # butun Message obyekti
+    msg_id = reply_msg.message_id         # faqat id
+
+    user_id = r.get(msg_id)
+    if not user_id:
+        await message.reply("❌ User ID topilmadi — reply noto‘g‘ri formatda.")
         return
-        
-    user_id = int(user_id_match.group(1))
-    
-    # Send the reply to user
+
     try:
         if message.photo:
             await bot.send_photo(
-                user_id,
+                int(user_id),
                 message.photo[-1].file_id,
                 caption=message.caption or "",
                 parse_mode="HTML"
             )
         elif message.text:
             await bot.send_message(
-                user_id,
+                int(user_id),
                 message.text,
                 parse_mode="HTML"
             )
+
+        # Inline tugmani olib tashlash
         await bot.edit_message_reply_markup(
             chat_id=message.chat.id,
-            message_id=reply_msg.message_id,
-            reply_markup=None  # This removes the inline keyboard
+            message_id=msg_id,
+            reply_markup=None
         )
-        await message.reply("✅ Javob foydalanuvchiga yuborildi!")
-    except Exception as e:
-        await message.reply(f"❌ Xatolik: {str(e)}")
 
+        await message.reply("✅ Javob foydalanuvchiga yuborildi!")
+
+    except Exception:
+        import traceback
+        error_text = traceback.format_exc()
+        await message.reply(f"❌ Xatolik:\n<pre>{error_text}</pre>", parse_mode="HTML")
 
 def get_main_menu():
     return ReplyKeyboardMarkup(
@@ -93,6 +96,7 @@ def get_main_menu():
         resize_keyboard=True
     )
 
+
 def get_lang_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -101,16 +105,13 @@ def get_lang_menu():
         resize_keyboard=True
     )
 
-
-
-# --- HANDLERS ---
-
 @dp.message(CommandStart())
 async def command_start_handler(message: Message):
     user_id = message.from_user.id
     user_state[user_id] = {"step": "choose_lang", "lang": "uz"}
     await message.answer("Tilni tanlang / Выберите язык:", reply_markup=get_lang_menu())
     await sync_to_async(User.objects.get_or_create)(username=user_id)
+
 
 @dp.message(F.text.in_(["🇺🇿 O'zbekcha", "🇷🇺 Русский"]))
 async def choose_language(message: Message):
@@ -121,6 +122,7 @@ async def choose_language(message: Message):
         "Familiya va Ismingizni kiriting:" if lang == "uz" else "Введите фамилию и имя:",
         reply_markup=ReplyKeyboardRemove()
     )
+
 
 @dp.message()
 async def universal_handler(message: Message):
@@ -224,22 +226,24 @@ async def universal_handler(message: Message):
         caption = message.caption or "🖼 Фото"
         if message.photo:
             await message.answer("Rasmingiz chat Admin ga yuborildi." if lang == "uz" else "Ваше фото отправлено админу.")
-            await bot.send_photo(
+            sent_msg = await bot.send_photo(
                 SHARTNOMA,
                 message.photo[-1].file_id,
                 caption=f"{caption}\n\n👤 Отправитель: {user_profile}",
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
+            r.setex(sent_msg.message_id, 86400, json.dumps(user_id))
             return
         elif message.text:
             await message.answer("Xabaringiz chat Admin ga yuborildi." if lang == "uz" else "Ваше сообщение отправлено админу.")
-            await bot.send_message(
+            sent_msg = await bot.send_message(
                 SHARTNOMA,
                 text=f"{message.text}\n\n👤 Отправитель: {user_profile}",
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
+            r.setex(sent_msg.message_id, 86400, json.dumps(user_id))
             return
 
     # Shartnoma state: xabarlarni boshqa gruppaga yuborish
@@ -263,22 +267,24 @@ async def universal_handler(message: Message):
         caption = message.caption or "🖼 Фото"
         if message.photo:
             await message.answer("Rasmingiz chat Admin ga yuborildi." if lang == "uz" else "Ваше фото отправлено админу.")
-            await bot.send_photo(
+            sent_msg = await bot.send_photo(
                 CHAT,
                 message.photo[-1].file_id,
                 caption=f"{caption}\n\n👤 Отправитель: {user_profile}",
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
+            r.setex(sent_msg.message_id, 86400, json.dumps(user_id))
             return
         elif message.text:
             await message.answer("Xabaringiz chat Admin ga yuborildi." if lang == "uz" else "Ваше сообщение отправлено админу.")
-            await bot.send_message(
+            sent_msg = await bot.send_message(
                 CHAT,
                 text=f"{message.text}\n\n👤 Отправитель: {user_profile}",
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
+            r.setex(sent_msg.message_id, 86400, json.dumps(user_id))
             return
 
     if message.text in MAIN_MENU_BUTTONS:
@@ -336,8 +342,6 @@ async def universal_handler(message: Message):
     await message.answer("Iltimos, menyudan tanlang yoki /start buyrug‘ini bosing." if lang == "uz" else "Пожалуйста, выберите из меню или напишите /start.", reply_markup=get_main_menu())
 
 
-
-
 async def set_commands(bot: Bot):
     commands = [
         BotCommand(command="start", description="/start"),
@@ -345,9 +349,11 @@ async def set_commands(bot: Bot):
     ]
     await bot.set_my_commands(commands)
 
+
 async def main():
     await set_commands(bot)
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

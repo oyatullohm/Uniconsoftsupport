@@ -1,21 +1,26 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,ReplyKeyboardRemove, InlineKeyboardMarkup,InlineKeyboardButton,  BotCommand
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types, F , Router
 from aiogram.filters import CommandStart
 from asgiref.sync import sync_to_async
 from aiogram.filters import Command
 from aiogram.types import Message
+import traceback
 import aiogram
 import environ
 import asyncio
 import django
 import random
+import redis
 import sys
 import re
 import os 
+import json
+r = redis.Redis(host='localhost', port=6379, db=0)
+  
 env = environ.Env()
 environ.Env.read_env()
-
+router = Router()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -69,3 +74,7 @@ builder = InlineKeyboardBuilder()
 
 
 
+# sudo systemctl daemon-reload
+# sudo systemctl enable aiogram
+# sudo systemctl start aiogram
+# sudo systemctl status aiogram
