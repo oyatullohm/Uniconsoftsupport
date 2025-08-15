@@ -229,7 +229,7 @@ async def universal_handler(message: Message):
             sent_msg = await bot.send_photo(
                 SHARTNOMA,
                 message.photo[-1].file_id,
-                caption=f"{caption}\n\n👤 Отправитель: {user_profile}{user_id}",
+                caption=f"{caption}\n\n👤 Отправитель: {user_profile} {user_id}",
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
@@ -239,7 +239,7 @@ async def universal_handler(message: Message):
             await message.answer("Xabaringiz chat Admin ga yuborildi." if lang == "uz" else "Ваше сообщение отправлено админу.")
             sent_msg = await bot.send_message(
                 SHARTNOMA,
-                text=f"{message.text}\n\n👤 Отправитель: {user_profile}{user_id}",
+                text=f"{message.text}\n\n👤 Отправитель: {user_profile} {user_id}",
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
@@ -270,7 +270,7 @@ async def universal_handler(message: Message):
             sent_msg = await bot.send_photo(
                 CHAT,
                 message.photo[-1].file_id,
-                caption=f"{caption}\n\n👤 Отправитель: {user_profile}{user_id}",
+                caption=f"{caption}\n\n👤 Отправитель: {user_profile} {user_id}",
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
@@ -280,7 +280,7 @@ async def universal_handler(message: Message):
             await message.answer("Xabaringiz chat Admin ga yuborildi." if lang == "uz" else "Ваше сообщение отправлено админу.")
             sent_msg = await bot.send_message(
                 CHAT,
-                text=f"{message.text}\n\n👤 Отправитель: {user_profile}{user_id}",
+                text=f"{message.text}\n\n👤 Отправитель: {user_profile} {user_id}",
                 reply_markup=reply_markup,
                 parse_mode="HTML"
             )
